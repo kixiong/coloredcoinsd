@@ -111,8 +111,12 @@ module.exports = (function () {
                 "nickname": "getAssetMetadata"
             },
             'action': function (req, res) {
+                console.log('req.params.verbosity = ', req.params.verbosity)
                 var verbosity = parseInt(req.params.verbosity)
+                console.log('verbosity #1 = ', verbosity)
+                console.log('[0,1,2].indexOf(verbosity) = ', [0,1,2].indexOf(verbosity))
                 verbosity = ([0,1,2].indexOf(verbosity) > -1)? verbosity : 1
+                console.log('verbosity #2 = ', verbosity)
                 api.getAssetMetadata(req.params.assetId, req.params.utxo, verbosity).
                 then(
                     function(data) { res.status(200).send(data) }, 

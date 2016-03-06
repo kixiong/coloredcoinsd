@@ -388,7 +388,7 @@ data.tx.outs.forEach( function (txOut) {
     coluutils.getAssetMetadata = function getAssetMetadata(assetId, utxo, verbosity) {
       var self = this
        var deferred = Q.defer()
-
+        console.log('getAssetMetadata(), verbosity = ', verbosity)
         getAssetInfo(assetId, utxo, verbosity).
         then(function(data){
           if(!data.issuanceTxid) {
@@ -859,7 +859,7 @@ coluutils.requestParseTx = function requestParseTx(txid)
                 }
                           try{
 
-      
+        
         client.methods.getassetinfo(args, function (data, response) {
             console.log(data.toString());
             if (response.statusCode == 200) {
