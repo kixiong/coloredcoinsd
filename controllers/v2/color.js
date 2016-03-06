@@ -97,7 +97,7 @@ module.exports = (function () {
         var getAssetMetadata = {
             'spec': {
                 "description": "",
-                "path": "/assetmetadata/{assetId}/{utxo}?verbosity={verbosity}",
+                "path": "/assetmetadata/{assetId}/{utxo}?",
                 "notes": "Returns information about an asset issuence",
                 "summary": "",
                 "method": "GET",
