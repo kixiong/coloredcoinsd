@@ -97,14 +97,14 @@ module.exports = (function () {
         var getAssetMetadata = {
             'spec': {
                 "description": "",
-                "path": "/assetmetadata/{assetId}/{utxo}/{verbosity}",
+                "path": "/assetmetadata/{assetId}/{utxo}?verbosity={verbosity}",
                 "notes": "Returns information about an asset issuence",
                 "summary": "",
                 "method": "GET",
                 "parameters": [
                     sw.pathParam("assetId", "ID of Asset we want to get info for", "string", true),
                     sw.pathParam("utxo", "provide data for secific utxo", "string", true),
-                    sw.pathParam("verbosity", "how detailed is the metadata, varying from 0 to 2 where 0 is the most basic", "string", false)
+                    sw.formParam("verbosity", "how detailed is the metadata, varying from 0 to 2 where 0 is the most basic", "string", false)
                 ],
                 "type": "assetMetadataResponse",
                 "errorResponses": [swagger.errors.notFound('asset')],
