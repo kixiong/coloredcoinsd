@@ -388,7 +388,6 @@ data.tx.outs.forEach( function (txOut) {
     coluutils.getAssetMetadata = function getAssetMetadata(assetId, utxo, verbosity) {
       var self = this
        var deferred = Q.defer()
-        console.log('getAssetMetadata(), verbosity = ', verbosity)
         getAssetInfo(assetId, utxo, verbosity).
         then(function(data){
           if(!data.issuanceTxid) {
