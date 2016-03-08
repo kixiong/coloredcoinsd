@@ -98,7 +98,7 @@ module.exports = (function () {
             'spec': {
                 "description": "",
                 "path": "/assetmetadata/{assetId}/{utxo}?",
-                "notes": "Returns information about an asset issuence",
+                "notes": "Returns information about an asset issuance",
                 "summary": "",
                 "method": "GET",
                 "parameters": [
@@ -111,9 +111,7 @@ module.exports = (function () {
                 "nickname": "getAssetMetadata"
             },
             'action': function (req, res) {
-                var verbosity = parseInt(req.query.verbosity)
-                verbosity = ([0,1,2].indexOf(verbosity) > -1)? verbosity : 1
-                api.getAssetMetadata(req.params.assetId, req.params.utxo, verbosity).
+                api.getAssetMetadata(req.params.assetId, req.params.utxo, parseInt(req.params.verbosity)).
                 then(
                     function(data) { res.status(200).send(data) }, 
                     function(err) { res.status(400).send({error: err.message}) } 

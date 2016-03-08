@@ -388,6 +388,9 @@ data.tx.outs.forEach( function (txOut) {
     coluutils.getAssetMetadata = function getAssetMetadata(assetId, utxo, verbosity) {
       var self = this
        var deferred = Q.defer()
+
+        verbosity = (verbosity === 0 || verbosity === 1)? verbosity : 1
+
         getAssetInfo(assetId, utxo, verbosity).
         then(function(data){
           if(!data.issuanceTxid) {
@@ -474,7 +477,28 @@ data.tx.outs.forEach( function (txOut) {
         return deferred.promise
     }
 
+    coluutils.getAssetsMetadata = function getAssetsMetadata(assets, verbosity) {
+      var self = this
+      var deferred = Q.defer()
 
+      var promises = []
+      var assetIds = assets.map(function (asset) { return asset.assetId })
+      var utxos = assets.map(function (asset) { return asset.utxo })
+      
+      assets.forEach(function (asset) {
+        promises.push(self.getAssetMetadata(asset.assetId, asset.utxo, verbosity))
+      })
+
+      Q.all(promises).done(function (metadataArray) {
+        console.log('metadataArray = ', metadataArray)
+        deferred.resolve(metadataArray)
+      },
+      function (err) {
+        deferred.reject(err)
+      })
+
+      return deferred.promise
+    }
 
     coluutils.seedMetadata = function seedMetadata(hash) {
         var deferred = Q.defer()
