@@ -385,14 +385,16 @@ data.tx.outs.forEach( function (txOut) {
     }
 
 
-    coluutils.getAssetMetadata = function getAssetMetadata(assetId, utxo, verbosity) {
+    coluutils.getAssetMetadata = function getAssetMetadata(assetId, optionalArgs) {
       var self = this
        var deferred = Q.defer()
 
-        verbosity = (verbosity === 0 || verbosity === 1)? verbosity : 1
+        var utxo = optionalArgs.utxo
+        var issueTxid = optionalArgs.issueTxid
+        var verbosity = (optionalArgs.verbosity === 0 || optionalArgs.verbosity === 1)? optionalArgs.verbosity : 1
 
-        getAssetInfo(assetId, utxo, verbosity).
-        then(function(data){
+        Q.when(getAssetInfo(assetId, utxo, verbosity, issueTxid),
+        function(data){
           if(!data.issuanceTxid) {
             if(utxo) {
                 console.log('rejecting request since issuanceTxid is missing for specific utxo')
@@ -486,7 +488,7 @@ data.tx.outs.forEach( function (txOut) {
       var utxos = assets.map(function (asset) { return asset.utxo })
       
       assets.forEach(function (asset) {
-        promises.push(self.getAssetMetadata(asset.assetId, asset.utxo, verbosity))
+        promises.push(self.getAssetMetadata(asset.assetId, {utxo : asset.utxo, issueTxid: asset.issueTxid, verbosity : verbosity}))
       })
 
       Q.all(promises).done(function (metadataArray) {
@@ -873,8 +875,12 @@ coluutils.requestParseTx = function requestParseTx(txid)
 
 
 
-    function getAssetInfo(assetId, utxo, verbosity)
+    function getAssetInfo(assetId, utxo, verbosity, issueTxid)
     {
+        if (verbosity === 0 && issueTxid) {
+          return {issuanceTxid : issueTxid}
+        }
+
         var deferred = Q.defer();
         var args = {
                     path: { "assetId": assetId, "utxo": utxo, "verbosity": verbosity },

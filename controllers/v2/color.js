@@ -111,7 +111,7 @@ module.exports = (function () {
                 "nickname": "getAssetMetadata"
             },
             'action': function (req, res) {
-                api.getAssetMetadata(req.params.assetId, req.params.utxo, parseInt(req.params.verbosity)).
+                api.getAssetMetadata(req.params.assetId, { utxo : req.params.utxo, verbosity : parseInt(req.params.verbosity) }).
                 then(
                     function(data) { res.status(200).send(data) }, 
                     function(err) { res.status(400).send({error: err.message}) } 
