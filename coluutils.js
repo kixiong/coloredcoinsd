@@ -1003,6 +1003,7 @@ coluutils.requestParseTx = function requestParseTx(txid)
                       deferred.reject(new Error('Not Enough of asset: ' + key ))
                       return;
                    }
+                   console.log('after findBestMatchByNeededAssets, tx.ins.length =  ' + tx.ins.length)
                 }
                 else {
                   console.log("no utxo list")
@@ -1047,6 +1048,7 @@ coluutils.requestParseTx = function requestParseTx(txid)
                 uniAssets.forEach(function(address) {
                   console.log('adding output ' + (tx.outs ? tx.outs.length : 0) + " for address: " + address.address + " with satoshi value " + config.mindustvalue + ' asset value: ' + address.amount)
                   var addressAmountLeft = address.amount
+                  console.log('currentAsset = ', currentAsset, ', currentAsset.inputs.length = ', currentAsset.inputs.length)
                   currentAsset.inputs.some(function (input) {
                     if(!input.amount) { return false }
                     if(addressAmountLeft - input.amount > 0 ) {
@@ -1173,32 +1175,37 @@ coluutils.requestParseTx = function requestParseTx(txid)
     }
 
     function findBestMatchByNeededAssets(utxos, assetList, key, tx, inputvalues, metadata) {
+
+      var selectedUtxos = []
       var foundAmount = 0
-      var sortedutxo = utxos;
-      for( asset in assetList) {
-        console.log('findBestMatchByNeededAssets checking asset: ' + asset +' key is ' + key )
-        sortedutxo =_.sortBy(sortedutxo, function(utxo) {
-          console.log(utxo.assets)
-            utxo.score = 0;
-            utxo.assets.forEach(function(a){
-                console.log('about to check asset ' + asset +' to asset ' +a.assetId + ' with amount: ' + a.amount)
-                if(((a.assetId == asset) && !assetList[asset].done)) { console.log('score += 1'); utxo.score += 1; }
-                if(((a.assetId == asset) && !assetList[asset].done && a.amount >= assetList[key].amount)) { console.log('score' + utxo.score); utxo.score += 100000; }
-                if(a.assetId == key) {console.log('amount += ' + a.amount); foundAmount += a.amount;} 
-            })
-            console.log('score is ' + utxo.score)
-            return utxo.score;
+
+      //1. try to find a utxo with such amount of the asset which is greater or equal to the target amount
+      var bestGreaterOrEqualAmountUtxo = findBestGreaterOrEqualAmountUtxo(utxos, assetList, key)
+      if (bestGreaterOrEqualAmountUtxo) {
+        console.log('bestGreaterOrEqualAmountUtxo: ', bestGreaterOrEqualAmountUtxo)
+        selectedUtxos[0] = bestGreaterOrEqualAmountUtxo
+      } else {
+        //2. try to get the minimal number of utxos where the sum of their amount of the asset greater than or equal to the remaining target amount
+        console.log('try to get utxos smaller than amount')
+        var utxosSortedByAssetAmount = _.sortBy(utxos, function (utxo) { return -getUtxoAssetAmount(utxo, key) })
+        var found = utxosSortedByAssetAmount.some(function (utxo) {
+          selectedUtxos.push(utxo)
+          foundAmount += getUtxoAssetAmount(utxo, key)
+          return foundAmount >= assetList[key].amount
         })
+        if (!found) selectedUtxos.length = 0
       }
-      console.log('sorted utxos by score and assets')
-      // do we have enough for the transfer
-      if(foundAmount < assetList[key].amount) {
-         console.log('not enough amount')
+
+      console.log('selectedUtxos: ', _.map(selectedUtxos, function (utxo) { return { utxo: (utxo.txid+':'+utxo.txid), amount: getUtxoAssetAmount(utxo, key), assetsLength: utxo.assets.length }}))
+      console.log('total assets inputs: ', _.sumBy(selectedUtxos, function (utxo) { return utxo.assets.length }))
+
+      if (!selectedUtxos.length) {
+        console.log('not enough amount')
         return false;
       }
       
       console.log('adding inputs by assets and amounts')    
-      sortedutxo.some(function(utxo) {
+      selectedUtxos.some(function (utxo) {
         console.log('interating over ')
         console.log(utxo)
           utxo.assets.forEach(function(asset) {
@@ -1262,6 +1269,53 @@ coluutils.requestParseTx = function requestParseTx(txid)
       /*sortedutxo.forEach(function(utxo){
 
       })*/
+    }
+
+    function findBestGreaterOrEqualAmountUtxo(utxos, assetList, key) {
+      console.log('findBestGreaterOrEqualAmountUtxo - assetId = ', key, ', utxos = ', _.map(utxos, function (utxo) { return utxo.txid +':' + utxo.index }))
+      console.log('assetList['+key+'].amount = ', assetList[key].amount)
+      var foundLargerOrEqualAmountUtxo = false
+
+      utxos.forEach(function (utxo) {
+        utxo.score = 0
+        var assetAmount = getUtxoAssetAmount(utxo, key)
+        if (assetAmount < assetList[key].amount) {
+          console.log('for utxo ' + utxo.txid + ':' + utxo.index + ', assetAmount = ' + assetAmount + ', no score.')
+          return
+        } 
+        foundLargerOrEqualAmountUtxo = true
+        if (assetAmount == assetList[key].amount) {
+          console.log('for utxo ' + utxo.txid + ':' + utxo.index + ', assetAmount = ' + assetAmount + ', score += 10000')
+          utxo.score += 10000
+        } else {  //assetAmount > assetList[key].amount
+          console.log('for utxo ' + utxo.txid + ':' + utxo.index + ', assetAmount = ' + assetAmount + ', score += 1000')
+          utxo.score += 1000   
+        }
+
+        for (assetId in assetList) {
+          if (assetId == key) continue
+
+          assetAmount = getUtxoAssetAmount(utxo, assetId)
+          console.log('checking assetId = ' + assetId)
+          if (assetAmount == assetList[assetId].amount) {
+            console.log('for utxo ' + utxo.txid + ':' + utxo.index + ', assetAmount = ' + assetAmount + ', score += 100')
+            utxo.score += 100
+          } else if (assetAmount > assetList[assetId].amount) {
+            console.log('for utxo ' + utxo.txid + ':' + utxo.index + ', assetAmount = ' + assetAmount + ', score += 10')
+            utxo.score += 10
+          } else {  //assetAmount < assetList[assetId].amount
+            console.log('for utxo ' + utxo.txid + ':' + utxo.index + ', assetAmount = ' + assetAmount + ', score += ' + (assetAmount / assetList[assetId].amount))
+            utxo.score +=  assetAmount / assetList[assetId].amount
+          }
+        }
+      })
+
+      console.log('finished iterating over utxos')
+      return foundLargerOrEqualAmountUtxo && _.maxBy(utxos, function (utxo) { return utxo.score })
+    }
+
+    function getUtxoAssetAmount(utxo, assetId) {
+      return _(utxo.assets).filter(function (asset) { return asset.assetId == assetId }).sumBy('amount')
     }
 
     function addInputsForIssueTransaction(tx, metadata) {

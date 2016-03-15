@@ -1,5 +1,5 @@
 var config = {
-  testnet: true,
+  testnet: false,
   google_api_key: 'AIzaSyBJfxobLSO_IM9tI1ATWpOelVInNuH1kBM',
   machineurl: 'http://api.coloredcoins.org',
   useS3: true,
@@ -12,7 +12,7 @@ var config = {
     timeout: 30000
   },
   blockexplorer: {
-    url: 'http://testnet.elasticbeanstalk.com'
+    url: 'http://explorer.coloredcoins.org'
   },
   torrentServer: {
     url: 'http://dev.metadata.coloredcoins.org'
